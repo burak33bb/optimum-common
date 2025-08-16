@@ -7,7 +7,9 @@ import (
 )
 
 // ParseUnverified extracts claims without validating the signature.
-// This mirrors your existing pattern but centralizes the quirks.
+// Accepts a valid JWT and returns Claims without verifying the signature.
+// Handles signature errors gracefully.
+// Returns an error for completely malformed tokens.
 func ParseUnverified(tokenString string) (*Claims, error) {
 	tok, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// No key: we expect signature-related error.
@@ -16,7 +18,7 @@ func ParseUnverified(tokenString string) (*Claims, error) {
 	var mc jwt.MapClaims
 	if err != nil {
 		// Accept signature errors, still read claims.
-		if vErr, ok := err.(*jwt.ValidationError); ok &&
+		if vErr, ok := err.(*jwt.ValidationError); ok && // TODO: fix type assertion
 			(vErr.Errors&jwt.ValidationErrorSignatureInvalid != 0 ||
 				vErr.Errors&jwt.ValidationErrorUnverifiable != 0) {
 			if tok != nil {

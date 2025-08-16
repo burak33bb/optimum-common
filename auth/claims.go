@@ -38,6 +38,11 @@ var defaultLimits LimitsDefaults
 func SetDefaultLimits(d LimitsDefaults) { defaultLimits = d }
 
 // fromMap builds Claims from jwt.MapClaims and applies defaults.
+// Detailed desc:
+// Converts jwt.MapClaims into a Claims struct.
+// Handles missing fields by using defaults from SetDefaultLimits.
+// Falls back to Subject for ClientID if client_id is missing.
+// Parses iat and exp into time.Time
 func fromMap(mc jwt.MapClaims) (*Claims, error) {
 	c := &Claims{
 		Subject:           str(mc, "sub", ""),
@@ -77,7 +82,7 @@ func toInt64(v interface{}) (int64, bool) {
 	case int:
 		return int64(t), true
 	case string:
-		var n json.Number = json.Number(t)
+		var n = json.Number(t)
 		if i, err := n.Int64(); err == nil {
 			return i, true
 		}
@@ -88,6 +93,8 @@ func toInt64(v interface{}) (int64, bool) {
 	}
 	return 0, false
 }
+
+// Note: in case many more field types added -> use generics
 func int64v(mc jwt.MapClaims, key string, def int64) int64 {
 	if v, ok := mc[key]; ok {
 		if i, ok := toInt64(v); ok {

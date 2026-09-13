@@ -20,20 +20,30 @@ func newBenchRWMap(size int) *syncx.RWMap[string, int] {
 	return m
 }
 
+func newBenchKeys(size int) []string {
+	keys := make([]string, size)
+	for i := range size {
+		keys[i] = "key-" + strconv.Itoa(i)
+	}
+	return keys
+}
+
 func BenchmarkRWMapLoad(b *testing.B) {
 	const size = 10_000
 	m := newBenchRWMap(size)
+	keys := newBenchKeys(size)
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := range b.N {
-		benchRWMapInt, _ = m.Load("key-" + strconv.Itoa(i%size))
+		benchRWMapInt, _ = m.Load(keys[i%size])
 	}
 }
 
 func BenchmarkRWMapLoadParallel(b *testing.B) {
 	const size = 10_000
 	m := newBenchRWMap(size)
+	keys := newBenchKeys(size)
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -41,7 +51,7 @@ func BenchmarkRWMapLoadParallel(b *testing.B) {
 		i := 0
 		value := 0
 		for pb.Next() {
-			value, _ = m.Load("key-" + strconv.Itoa(i%size))
+			value, _ = m.Load(keys[i%size])
 			i++
 		}
 		_ = value
@@ -51,11 +61,12 @@ func BenchmarkRWMapLoadParallel(b *testing.B) {
 func BenchmarkRWMapStore(b *testing.B) {
 	const size = 10_000
 	m := syncx.NewRWMap[string, int]()
+	keys := newBenchKeys(size)
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := range b.N {
-		m.Store("key-"+strconv.Itoa(i%size), i)
+		m.Store(keys[i%size], i)
 	}
 }
 
@@ -73,6 +84,7 @@ func BenchmarkRWMapLoadAll(b *testing.B) {
 func BenchmarkRWMapMixed80R20W(b *testing.B) {
 	const size = 10_000
 	m := newBenchRWMap(size)
+	keys := newBenchKeys(size)
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -80,7 +92,7 @@ func BenchmarkRWMapMixed80R20W(b *testing.B) {
 		i := 0
 		value := 0
 		for pb.Next() {
-			key := "key-" + strconv.Itoa(i%size)
+			key := keys[i%size]
 			if i%5 == 0 {
 				m.Store(key, i)
 			} else {
